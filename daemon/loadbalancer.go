@@ -1,4 +1,4 @@
-// Copyright 2016-2017 Authors of Cilium
+// Copyright 2016-2018 Authors of Cilium
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -424,6 +424,34 @@ func (d *Daemon) RevNATDump() ([]loadbalancer.L3n4AddrID, error) {
 	}
 
 	return dump, nil
+}
+
+func openServiceMaps() error {
+	if option.Config.EnableIPv6 {
+		if _, err := lbmap.Service6Map.OpenOrCreate(); err != nil {
+			return err
+		}
+		if _, err := lbmap.RevNat6Map.OpenOrCreate(); err != nil {
+			return err
+		}
+		if _, err := lbmap.RRSeq6Map.OpenOrCreate(); err != nil {
+			return err
+		}
+	}
+
+	if option.Config.EnableIPv4 {
+		if _, err := lbmap.Service4Map.OpenOrCreate(); err != nil {
+			return err
+		}
+		if _, err := lbmap.RevNat4Map.OpenOrCreate(); err != nil {
+			return err
+		}
+		if _, err := lbmap.RRSeq4Map.OpenOrCreate(); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func restoreServiceIDs() {

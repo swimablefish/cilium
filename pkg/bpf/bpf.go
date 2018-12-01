@@ -22,6 +22,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"sync/atomic"
 	"syscall"
 	"unsafe"
 
@@ -32,7 +33,11 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-var log = logging.DefaultLogger.WithField(logfields.LogSubsys, "bpf")
+var (
+	log = logging.DefaultLogger.WithField(logfields.LogSubsys, "bpf")
+
+	preAllocateMapSetting uint32 = BPF_F_NO_PREALLOC
+)
 
 const (
 	// BPF map type constants. Must match enum bpf_map_type from linux/bpf.h
@@ -479,4 +484,16 @@ func GetMtime() (uint64, error) {
 	}
 
 	return uint64(unix.TimespecToNsec(ts)), nil
+}
+
+// EnableMapPreAllocation enables BPF map pre-allocation on map types that
+// support it.
+func EnableMapPreAllocation() {
+	atomic.StoreUint32(&preAllocateMapSetting, 0)
+}
+
+// GetPreAllocateMapFlags returns the map flags for map which use conditional
+// pre-allocation.
+func GetPreAllocateMapFlags() uint32 {
+	return atomic.LoadUint32(&preAllocateMapSetting)
 }

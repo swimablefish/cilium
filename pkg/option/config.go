@@ -170,6 +170,9 @@ const (
 	// MonitorQueueSizeName is the name of the option MonitorQueueSize
 	MonitorQueueSizeName    = "monitor-queue-size"
 	MonitorQueueSizeNameEnv = "CILIUM_MONITOR_QUEUE_SIZE"
+
+	// PreAllocateMapsName is the name of the option PreAllocateMaps
+	PreAllocateMapsName = "preallocate-bpf-maps"
 )
 
 // Available option for daemonConfig.Tunnel
@@ -382,6 +385,10 @@ type daemonConfig struct {
 
 	// MonitorQueueSize is the size of the monitor event queue
 	MonitorQueueSize int
+
+	// PreAllocateMaps if enabled, results in BPF maps in the datapath to
+	// be preallocated
+	PreAllocateMaps bool
 }
 
 var (

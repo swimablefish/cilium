@@ -309,13 +309,14 @@ func (pm *PolicyMap) Close() error {
 }
 
 func OpenMap(path string) (*PolicyMap, bool, error) {
+	flags := bpf.GetPreAllocateMapFlags()
 	fd, isNewMap, err := bpf.OpenOrCreateMap(
 		path,
 		bpf.BPF_MAP_TYPE_HASH,
 		uint32(unsafe.Sizeof(PolicyKey{})),
 		uint32(unsafe.Sizeof(PolicyEntry{})),
 		MaxEntries,
-		0, 0,
+		flags, 0,
 	)
 
 	if err != nil {

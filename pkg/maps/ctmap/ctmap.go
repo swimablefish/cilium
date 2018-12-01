@@ -226,7 +226,7 @@ func NewMap(mapName string, mapType MapType) *Map {
 			mapInfo[mapType].keySize,
 			int(unsafe.Sizeof(CtEntry{})),
 			mapInfo[mapType].maxEntries,
-			0, 0,
+			bpf.GetPreAllocateMapFlags(), 0,
 			mapInfo[mapType].parser,
 		),
 		mapType: mapType,
