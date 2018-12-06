@@ -17,9 +17,7 @@ package connector
 import (
 	"fmt"
 	"math"
-	"math/rand"
 	"net"
-	"time"
 	"path/filepath"
 	"unsafe"
 
@@ -152,11 +150,9 @@ func SetupIpvlanRemoteNs(netNs ns.NetNS, srcIfName, dstIfName string) (int, int,
 		return 0, 0, fmt.Errorf("failed to create root BPF map for %q: %s", dstIfName, err)
 	}
 
-	rand.Seed(time.Now().UTC().UnixNano())
-
 	err = netNs.Do(func(_ ns.NetNS) error {
-		// FIXME: Ugly hack for testing till we get IPAM to switch over, needed to UP the dev
-		var address = &net.IPNet{IP: net.IPv4(10, 8, 1, 1 + byte(rand.Intn(128))), Mask: net.CIDRMask(24, 32)}
+		// FIXME: Ugly hack to UP the device.
+		var address = &net.IPNet{IP: net.IPv4(10, 10, 10, 10), Mask: net.CIDRMask(32, 32)}
 		var addr = &netlink.Addr{IPNet: address}
 		var err error
 

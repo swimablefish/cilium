@@ -93,15 +93,15 @@ func compileDatapath(ctx context.Context, ep endpoint, dirs *directoryInfo, debu
 
 func reloadDatapath(ctx context.Context, ep endpoint, dirs *directoryInfo) error {
 	// Replace the current program
-	objPath := path.Join(dirs.Output, endpointObj)
-	if err := replaceDatapath(ctx, ep.InterfaceName(), objPath, symbolFromEndpoint); err != nil {
-		scopedLog := ep.Logger(Subsystem).WithFields(logrus.Fields{
-			logfields.Path: objPath,
-			logfields.Veth: ep.InterfaceName(),
-		})
-		scopedLog.WithError(err).Warn("JoinEP/veth: Failed to load program")
-		return err
-	}
+//	objPath := path.Join(dirs.Output, endpointObj)
+//	if err := replaceDatapath(ctx, ep.InterfaceName(), objPath, symbolFromEndpoint); err != nil {
+//		scopedLog := ep.Logger(Subsystem).WithFields(logrus.Fields{
+//			logfields.Path: objPath,
+//			logfields.Veth: ep.InterfaceName(),
+//		})
+//		scopedLog.WithError(err).Warn("JoinEP/veth: Failed to load program")
+//		return err
+//	}
 
 	// TODO: generalize this to only do one variant
 	objPath = path.Join(dirs.Output, ipveObj)
