@@ -494,6 +494,12 @@ func EnableMapPreAllocation() {
 
 // GetPreAllocateMapFlags returns the map flags for map which use conditional
 // pre-allocation.
-func GetPreAllocateMapFlags() uint32 {
+func GetPreAllocateMapFlags(t MapType) uint32 {
+	switch {
+	case !t.allowsPreallocation():
+		return BPF_F_NO_PREALLOC
+	case t.requiresPreallocation():
+		return 0
+	}
 	return atomic.LoadUint32(&preAllocateMapSetting)
 }

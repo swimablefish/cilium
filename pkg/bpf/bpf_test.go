@@ -21,7 +21,21 @@ import (
 )
 
 func (s *BPFTestSuite) TestDefaultMapFlags(c *C) {
-	c.Assert(GetPreAllocateMapFlags(), Equals, uint32(BPF_F_NO_PREALLOC))
+	c.Assert(GetPreAllocateMapFlags(BPF_MAP_TYPE_LPM_TRIE), Equals, uint32(BPF_F_NO_PREALLOC))
+	c.Assert(GetPreAllocateMapFlags(BPF_MAP_TYPE_ARRAY), Equals, uint32(0))
+	c.Assert(GetPreAllocateMapFlags(BPF_MAP_TYPE_LRU_HASH), Equals, uint32(0))
+
+	c.Assert(GetPreAllocateMapFlags(BPF_MAP_TYPE_HASH), Equals, uint32(BPF_F_NO_PREALLOC))
 	EnableMapPreAllocation()
-	c.Assert(GetPreAllocateMapFlags(), Equals, uint32(0))
+	c.Assert(GetPreAllocateMapFlags(BPF_MAP_TYPE_HASH), Equals, uint32(0))
+
+	c.Assert(GetPreAllocateMapFlags(BPF_MAP_TYPE_LPM_TRIE), Equals, uint32(BPF_F_NO_PREALLOC))
+	c.Assert(GetPreAllocateMapFlags(BPF_MAP_TYPE_ARRAY), Equals, uint32(0))
+	c.Assert(GetPreAllocateMapFlags(BPF_MAP_TYPE_LRU_HASH), Equals, uint32(0))
+}
+
+func (s *BPFTestSuite) TestPreallocationFlags(c *C) {
+	for m := MapType(0); m < MapTypeMaximum; m++ {
+		c.Assert(m.allowsPreallocation() || !m.requiresPreallocation(), Equals, true)
+	}
 }

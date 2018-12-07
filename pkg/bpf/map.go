@@ -129,6 +129,21 @@ func (t MapType) String() string {
 	return "Unknown"
 }
 
+func (t MapType) allowsPreallocation() bool {
+	if t == MapTypeLPMTrie {
+		return false
+	}
+	return true
+}
+
+func (t MapType) requiresPreallocation() bool {
+	switch t {
+	case MapTypeHash, MapTypePerCPUHash, MapTypeLPMTrie, MapTypeHashOfMaps:
+		return false
+	}
+	return true
+}
+
 type MapKey interface {
 	fmt.Stringer
 
@@ -417,7 +432,8 @@ func (m *Map) OpenOrCreate() (bool, error) {
 	}
 
 retry:
-	fd, isNew, err := OpenOrCreateMap(m.path, int(m.MapType), m.KeySize, m.ValueSize, m.MaxEntries, m.Flags, m.InnerID)
+	flags := m.Flags | GetPreAllocateMapFlags(m.MapType)
+	fd, isNew, err := OpenOrCreateMap(m.path, int(m.MapType), m.KeySize, m.ValueSize, m.MaxEntries, flags, m.InnerID)
 	if err != nil && m.MapType == BPF_MAP_TYPE_LPM_TRIE {
 		// If the map type is an LPM, then we can typically fall back
 		// to a hash map. Note that this requires datapath support,
@@ -434,6 +450,7 @@ retry:
 	registerMap(m.path, m)
 
 	m.fd = fd
+	m.Flags = flags
 	return isNew, nil
 }
 
