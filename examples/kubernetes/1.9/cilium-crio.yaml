@@ -70,6 +70,19 @@ data:
   ct-global-max-entries-tcp: "524288"
   ct-global-max-entries-other: "262144"
 
+  # Pre-allocation of map entries allows per-packet latency to be reduced, at
+  # the expense of up-front memory allocation for the entries in the maps.
+  # The default value will minimize memory usage in the default installation;
+  # users who are sensitive to latency may consider enabling this option.
+  #
+  # If this value is modified, then during the next Cilium startup the
+  # tracking of ongoing connections may be disrupted. This may lead to brief
+  # policy drops or a change in loadbalancing decisions for a connection.
+  #
+  # For users upgrading from Cilium 1.3 or earlier, to minimize disruption
+  # during the upgrade process, comment out this option.
+  preallocate-bpf-maps: "false"
+
   # Regular expression matching compatible Istio sidecar istio-proxy
   # container image names
   sidecar-istio-proxy-image: "cilium/istio_proxy"
