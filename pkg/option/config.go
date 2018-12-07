@@ -172,7 +172,8 @@ const (
 	MonitorQueueSizeNameEnv = "CILIUM_MONITOR_QUEUE_SIZE"
 
 	// PreAllocateMapsName is the name of the option PreAllocateMaps
-	PreAllocateMapsName = "preallocate-bpf-maps"
+	PreAllocateMapsName    = "preallocate-bpf-maps"
+	PreAllocateMapsNameEnv = "CILIUM_PREALLOCATE_BPF_MAPS"
 )
 
 // Available option for daemonConfig.Tunnel
