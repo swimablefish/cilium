@@ -32,23 +32,19 @@ func AllocateCIDRs(impl Implementation, prefixes []*net.IPNet) error {
 		return err
 	}
 
-	// Next, allocate labels -> ID mappings in KVstore (for policy)
-	prefixIdentities, err := cidr.AllocateCIDRIdentities(prefixes)
+	identityList, err := cidr.AllocateCIDRIdentities(prefixes)
 	if err != nil {
 		return err
 	}
 
-	// Finally, allocate CIDR -> ID mappings in KVstore (for ipcache)
-	err = upsertIPNetsToKVStore(prefixes, prefixIdentities)
-	if err != nil {
-		if err2 := cache.ReleaseSlice(prefixIdentities); err2 != nil {
-			log.WithError(err2).WithFields(logrus.Fields{
-				fieldIdentities: prefixIdentities,
-			}).Warn("Failed to release CIDRs during CIDR->ID mapping")
-		}
+	for i, prefix := range prefixes {
+		IPIdentityCache.Upsert(prefix.String(), nil, Identity{
+			ID:     identityList[i].ID,
+			Source: FromCIDR,
+		})
 	}
 
-	return err
+	return nil
 }
 
 // ReleaseCIDRs attempts to release identities and IP<->Identity mappings for
@@ -57,11 +53,8 @@ func AllocateCIDRs(impl Implementation, prefixes []*net.IPNet) error {
 // the most recent error. Returns nil if no errors occur.
 func ReleaseCIDRs(prefixes []*net.IPNet) (err error) {
 	scopedLog := log.WithField("prefixes", prefixes)
-	if prefixes != nil {
-		if err = deleteIPNetsFromKVStore(prefixes); err != nil {
-			scopedLog.WithError(err).Debug(
-				"Failed to release CIDR->Identity mappings")
-		}
+	for _, prefix := range prefixes {
+		IPIdentityCache.Delete(prefix.String(), FromCIDR)
 	}
 
 	prefixIdentities, err2 := cidr.LookupCIDRIdentities(prefixes)

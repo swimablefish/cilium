@@ -177,3 +177,39 @@ func (ias *IdentityAllocatorSuite) TestAllocator(c *C) {
 	err = Release(id3)
 	c.Assert(err, IsNil)
 }
+
+func (ias *IdentityAllocatorSuite) TestLocalAllocationr(c *C) {
+	lbls1 := labels.NewLabelsFromSortedList("cidr:192.0.2.3/32")
+
+	InitIdentityAllocator(dummyOwner{})
+	defer Close()
+	defer IdentityAllocator.DeleteAllKeys()
+
+	id, isNew, err := AllocateIdentity(lbls1)
+	c.Assert(id, Not(IsNil))
+	c.Assert(err, IsNil)
+	c.Assert(isNew, Equals, true)
+	c.Assert(id.ID.HasLocalScope(), Equals, true)
+
+	id, isNew, err = AllocateIdentity(lbls1)
+	c.Assert(id, Not(IsNil))
+	c.Assert(err, IsNil)
+	c.Assert(isNew, Equals, false)
+
+	cache := GetIdentityCache()
+	c.Assert(cache[id.ID], Not(IsNil))
+
+	c.Assert(Release(id), IsNil)
+	c.Assert(Release(id), IsNil)
+
+	cache = GetIdentityCache()
+	c.Assert(cache[id.ID], IsNil)
+
+	id, isNew, err = AllocateIdentity(lbls1)
+	c.Assert(id, Not(IsNil))
+	c.Assert(err, IsNil)
+	c.Assert(isNew, Equals, true)
+	c.Assert(id.ID.HasLocalScope(), Equals, true)
+
+	c.Assert(Release(id), IsNil)
+}

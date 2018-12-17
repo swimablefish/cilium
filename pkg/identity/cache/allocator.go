@@ -56,6 +56,8 @@ var (
 	// kvstore.
 	IdentityAllocator *allocator.Allocator
 
+	localIdentities *localIdentityCache
+
 	// IdentitiesPath is the path to where identities are stored in the key-value
 	// store.
 	IdentitiesPath = path.Join(kvstore.BaseKeyPrefix, "state", "identities", "v1")
@@ -111,6 +113,8 @@ func InitIdentityAllocator(owner IdentityAllocatorOwner) {
 	}
 
 	IdentityAllocator = a
+	localIdentities = newLocalIdentityCache(1, 0xFFFFFF, events)
+
 }
 
 // Close closes the identity allocator and allows to call
@@ -126,6 +130,7 @@ func Close() {
 	IdentityAllocator.Delete()
 	watcher.stop()
 	IdentityAllocator = nil
+	localIdentities = nil
 }
 
 // WaitForInitialIdentities waits for the initial set of security identities to
@@ -155,15 +160,21 @@ func AllocateIdentity(lbls labels.Labels) (*identity.Identity, bool, error) {
 		logfields.IdentityLabels: lbls.String(),
 	}).Debug("Resolving identity")
 
-	// If there is only one label with the "reserved" source and a well-known
-	// key, use the well-known identity for that key.
-	if reservedIdentity := LookupReservedIdentityByLabels(lbls); reservedIdentity != nil {
-		log.WithFields(logrus.Fields{
-			logfields.Identity:       reservedIdentity.ID,
-			logfields.IdentityLabels: lbls.String(),
-			"isNew":                  false,
-		}).Debug("Resolved reserved identity")
-		return reservedIdentity, false, nil
+	if !identity.RequiresGlobalIdentity(lbls) {
+		// If there is only one label with the "reserved" source and a well-known
+		// key, use the well-known identity for that key.
+		if reservedIdentity := LookupReservedIdentityByLabels(lbls); reservedIdentity != nil {
+			log.WithFields(logrus.Fields{
+				logfields.Identity:       reservedIdentity.ID,
+				logfields.IdentityLabels: lbls.String(),
+				"isNew":                  false,
+			}).Debug("Resolved reserved identity")
+			return reservedIdentity, false, nil
+		}
+
+		if localIdentities != nil {
+			return localIdentities.lookupOrCreate(lbls)
+		}
 	}
 
 	if IdentityAllocator == nil {
@@ -189,7 +200,10 @@ func AllocateIdentity(lbls labels.Labels) (*identity.Identity, bool, error) {
 // After the last user has released the ID, the returned lastUse value is true.
 func Release(id *identity.Identity) error {
 	// Ignore reserved identities.
-	if identity.LookupReservedIdentity(id.ID) != nil {
+	if !identity.RequiresGlobalIdentity(id.Labels) {
+		if localIdentities != nil {
+			localIdentities.release(id)
+		}
 		return nil
 	}
 
