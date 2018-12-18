@@ -49,7 +49,6 @@ import (
 	"github.com/cilium/cilium/pkg/policy"
 	"github.com/cilium/cilium/pkg/policy/trafficdirection"
 	"github.com/cilium/cilium/pkg/proxy/accesslog"
-	"github.com/cilium/cilium/pkg/u8proto"
 
 	"github.com/sirupsen/logrus"
 )
@@ -90,8 +89,6 @@ const (
 
 	// CallsMapName specifies the base prefix for EP specific call map.
 	CallsMapName = "cilium_calls_"
-	// PolicyGlobalMapName specifies the global tail call map for EP handle_policy() lookup.
-	PolicyGlobalMapName = "cilium_policy"
 
 	// HealthCEPPrefix is the prefix used to name the cilium health endpoints' CEP
 	HealthCEPPrefix = "cilium-health-"
@@ -1177,13 +1174,10 @@ func ParseEndpoint(strEp string) (*Endpoint, error) {
 	return &ep, nil
 }
 
-func (e *Endpoint) RemoveFromGlobalPolicyMap() error {
-	gpm, err := policymap.OpenGlobalMap(e.PolicyGlobalMapPathLocked())
+func RemoveFromGlobalPolicyMap(id uint32) error {
+	gpm, err := policymap.OpenGlobalMap()
 	if err == nil {
-		// We need to remove ourselves from global map, so that
-		// resources (prog/map reference counts) can be released.
-		gpm.Delete(uint32(e.ID), policymap.AllPorts, u8proto.All, trafficdirection.Ingress)
-		gpm.Delete(uint32(e.ID), policymap.AllPorts, u8proto.All, trafficdirection.Egress)
+		err = gpm.Delete(id)
 		gpm.Close()
 	}
 
