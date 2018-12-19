@@ -97,14 +97,12 @@ func listMap(args []string) {
 }
 
 func dumpMap(file string) {
-
-	fd, err := bpf.ObjGet(file)
+	m, err := policymap.OpenMap(file)
 	if err != nil {
-		Fatalf("%s\n", err)
+		Fatalf("Failed to open map: %s", err)
 	}
-	defer bpf.ObjClose(fd)
+	defer m.Close()
 
-	m := policymap.PolicyMap{Fd: fd}
 	statsMap, err := m.DumpToSlice()
 	if err != nil {
 		Fatalf("Error while opening bpf Map: %s\n", err)
